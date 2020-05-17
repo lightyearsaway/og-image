@@ -1,57 +1,19 @@
+import { sanitizeHtml } from "./sanitizer";
+import { ParsedRequest } from "./types";
 
-import { readFileSync } from 'fs';
-import marked from 'marked';
-import { sanitizeHtml } from './sanitizer';
-import { ParsedRequest } from './types';
-const twemoji = require('twemoji');
-const twOptions = { folder: 'svg', ext: '.svg' };
-const emojify = (text: string) => twemoji.parse(text, twOptions);
-
-const rglr = readFileSync(`${__dirname}/../_fonts/Inter-Regular.woff2`).toString('base64');
-const bold = readFileSync(`${__dirname}/../_fonts/Inter-Bold.woff2`).toString('base64');
-const mono = readFileSync(`${__dirname}/../_fonts/Vera-Mono.woff2`).toString('base64');
-
-function getCss(theme: string, fontSize: string) {
-    let background = 'white';
-    let foreground = 'black';
-    let radial = 'lightgray';
-
-    if (theme === 'dark') {
-        background = 'black';
-        foreground = 'white';
-        radial = 'dimgray';
-    }
-    return `
-    @font-face {
-        font-family: 'Inter';
-        font-style:  normal;
-        font-weight: normal;
-        src: url(data:font/woff2;charset=utf-8;base64,${rglr}) format('woff2');
-    }
-
-    @font-face {
-        font-family: 'Inter';
-        font-style:  normal;
-        font-weight: bold;
-        src: url(data:font/woff2;charset=utf-8;base64,${bold}) format('woff2');
-    }
-
-    @font-face {
-        font-family: 'Vera';
-        font-style: normal;
-        font-weight: normal;
-        src: url(data:font/woff2;charset=utf-8;base64,${mono})  format("woff2");
-      }
+function getCss() {
+  return `
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
 
     body {
-        background: ${background};
-        background-image: radial-gradient(circle at 25px 25px, ${radial} 2%, transparent 0%), radial-gradient(circle at 75px 75px, ${radial} 2%, transparent 0%);
+        background: #1f1f1f;
         background-size: 100px 100px;
         height: 100vh;
         display: flex;
         text-align: center;
-        align-items: center;
         justify-content: center;
+        align-items: center;
+        flex-direction: column;
     }
 
     code {
@@ -61,26 +23,27 @@ function getCss(theme: string, fontSize: string) {
         letter-spacing: -5px;
     }
 
-    code:before, code:after {
+    code:before,
+    code:after {
         content: '\`';
     }
 
-    .logo-wrapper {
+    .items-wrapper {
         display: flex;
-        align-items: center;
-        align-content: center;
-        justify-content: center;
-        justify-items: center;
+        flex-wrap: wrap;
+        align-self: stretch;
+        margin-top: 72px;
+        margin-left: 24px;
     }
 
-    .logo {
-        margin: 0 75px;
-    }
-
-    .plus {
-        color: #BBB;
-        font-family: Times New Roman, Verdana;
-        font-size: 100px;
+    .item {
+        background: #262626;
+        border-radius: 12px;
+        padding: 12px;
+        flex: 0 0 180px;
+        margin-left: 36px;
+        height: 180px;
+        margin-bottom: 36px;
     }
 
     .spacer {
@@ -93,54 +56,65 @@ function getCss(theme: string, fontSize: string) {
         margin: 0 .05em 0 .1em;
         vertical-align: -0.1em;
     }
-    
-    .heading {
-        font-family: 'Inter', sans-serif;
-        font-size: ${sanitizeHtml(fontSize)};
+
+    .title-wrapper {
+        font-family: 'Poppins', sans-serif;
+        font-size: 96px;
         font-style: normal;
-        color: ${foreground};
-        line-height: 1.8;
+        line-height: 1;
+        color: white;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+    }
+
+    .dofuslab-logo {
+        margin-top: 48px;
+        width: 480px;
     }`;
 }
 
+const IMAGE_DIR = "https://dofus-lab.s3.us-east-2.amazonaws.com/item/";
+
+const getImageUrl = (itemId: string) => {
+  return `${IMAGE_DIR}${itemId}.png`;
+};
+
 export function getHtml(parsedReq: ParsedRequest) {
-    const { text, theme, md, fontSize, images, widths, heights } = parsedReq;
-    return `<!DOCTYPE html>
+  const { text, items } = parsedReq;
+  return `<!DOCTYPE html>
 <html>
     <meta charset="utf-8">
-    <title>Generated Image</title>
+    <title>G-wrapperenerated Image</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        ${getCss(theme, fontSize)}
+        ${getCss()}
     </style>
     <body>
-        <div>
-            <div class="spacer">
-            <div class="logo-wrapper">
-                ${images.map((img, i) =>
-                    getPlusSign(i) + getImage(img, widths[i], heights[i])
-                ).join('')}
-            </div>
-            <div class="spacer">
-            <div class="heading">${emojify(
-                md ? marked(text) : sanitizeHtml(text)
-            )}
-            </div>
+        <div class="title-wrapper">
+          ${text}
+          
         </div>
+        <div class="items-wrapper">
+            ${items.map(
+              (itemId) =>
+                `<div class="item">${getImage(`${getImageUrl(itemId)}`)}</div>`
+            )}
+            ${Array(16 - items.length)
+              .fill(null)
+              .map(() => '<div class="item"></div>')}
+        </div>
+        <img src="https://dofus-lab.s3.us-east-2.amazonaws.com/logos/DL-Full_Dark.svg" class="dofuslab-logo">
     </body>
 </html>`;
 }
 
-function getImage(src: string, width ='auto', height = '225') {
-    return `<img
+function getImage(src: string) {
+  return `<img
         class="logo"
         alt="Generated Image"
         src="${sanitizeHtml(src)}"
-        width="${sanitizeHtml(width)}"
-        height="${sanitizeHtml(height)}"
-    />`
-}
-
-function getPlusSign(i: number) {
-    return i === 0 ? '' : '<div class="plus">+</div>';
+        width="170"
+        height="170"
+    />`;
 }
