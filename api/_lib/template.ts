@@ -1,5 +1,8 @@
 import { sanitizeHtml } from "./sanitizer";
 import { ParsedRequest } from "./types";
+const twemoji = require("twemoji");
+const twOptions = { folder: "svg", ext: ".svg" };
+const emojify = (text: string) => twemoji.parse(text, twOptions);
 
 function getCss() {
   return `
@@ -92,8 +95,7 @@ export function getHtml(parsedReq: ParsedRequest) {
     </style>
     <body>
         <div class="title-wrapper">
-          ${text}
-          
+          ${emojify(text)}
         </div>
         <div class="items-wrapper">
             ${items.map(
