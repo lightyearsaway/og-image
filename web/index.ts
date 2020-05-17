@@ -130,7 +130,7 @@ const App = (_: any, state: AppState, setState: SetState) => {
     overrideUrl = null,
   } = state;
   const url = new URL(window.location.origin);
-  url.pathname = `${encodeURIComponent(text)}.png`;
+  url.pathname = `${encodeURIComponent(text)}`;
   for (let item of items) {
     url.searchParams.append("items", item);
   }
